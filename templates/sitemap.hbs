@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  {{#sitemap_collection (sitemap_default sitemap.collection "pages")}}
+  {{#each items as |item|}}
+  <url>
+    {{sitemap_entry @item "loc"}}
+    {{sitemap_entry @item "lastmod"}}
+    {{sitemap_entry @item "changefreq"}}
+    {{sitemap_entry @item "priority"}}
+  </url>
+  {{/each}}
+  {{/sitemap_collection}}
+</urlset>
