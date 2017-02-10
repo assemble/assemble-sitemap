@@ -1,13 +1,11 @@
 'use strict';
 
 var fs = require('fs');
-var url = require('url');
 var path = require('path');
-var moment = require('moment');
 var isValid = require('is-valid-app');
-var extend = require('extend-shallow');
 var through = require('through2');
-var toHtml = require('html-tag');
+var entry = require('./lib/entry');
+var utils = require('./lib/utils');
 var template = path.join(__dirname, 'templates/sitemap.hbs');
 
 module.exports = function sitemap(options) {
@@ -37,7 +35,7 @@ module.exports = function sitemap(options) {
         options = {dest: options};
       }
 
-      var opts = sitemapOptions(app, options);
+      var opts = utils.sitemapOptions(app, options);
       var tmpl = opts.template || template;
       var view = app.view({path: tmpl});
       view.contents = fs.readFileSync(tmpl);
@@ -50,8 +48,8 @@ module.exports = function sitemap(options) {
       });
 
       function rename(file) {
-        var dest = get(app, opts, 'dest');
-        var cwd = get(app, opts, 'cwd');
+        var dest = utils.getProp(app, opts, 'dest');
+        var cwd = utils.getProp(app, opts, 'cwd');
 
         file.basename = 'sitemap.xml';
         if (cwd) {
@@ -114,59 +112,3 @@ module.exports = function sitemap(options) {
     });
   };
 };
-
-function entry(item, tag, options, cb) {
-  let data = extend({}, item.data, item.data.sitemap);
-  let opts = extend({}, sitemapOptions(this.app));
-  let dest = get(this.app, opts, 'dest');
-  let val = null;
-
-  let ctx = extend({}, opts, this.context, data);
-
-  switch (tag) {
-    case 'loc':
-      let rel = item.relative;
-      if (dest && ctx.dest) {
-        rel = path.join(path.relative(dest, ctx.dest), rel);
-      }
-
-      val = url.resolve(ctx.url, rel);
-      break;
-
-    case 'lastmod':
-      val = lastModified(ctx, item);
-      break;
-
-    case 'changefreq':
-      val = ctx[tag] || 'weekly';
-      break;
-
-    case 'priority':
-      val = ctx[tag] || '0.5';
-      break;
-
-    default: {
-      cb(new Error('unrecognized tag: ' + tag));
-      return;
-    }
-  }
-  cb(null, toHtml(tag, val));
-}
-
-function lastModified(data, item) {
-  var date = data.lastModified || data.lastmod || item.stat && item.stat.mtime;
-  return moment(date).format('YYYY-MM-DD');
-}
-
-function sitemapOptions(app, options) {
-  var appOpts = app.option('sitemap');
-  var appData = app.data('sitemap');
-  return extend({}, app.options, appOpts, appData, options);
-}
-
-function get(app, options, prop) {
-  return options[prop]
-    || app.get(['cache', prop])
-    || app.option(prop)
-    || app.data(prop);
-}
