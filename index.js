@@ -1,26 +1,27 @@
 'use strict';
 
-var path = require('path');
+var fs = require('fs');
 var url = require('url');
-var toRange = require('to-regex-range');
+var path = require('path');
+var moment = require('moment');
+var isValid = require('is-valid-app');
+var extend = require('extend-shallow');
 var through = require('through2');
-var merge = require('mixin-deep');
 var toHtml = require('html-tag');
+var template = path.join(__dirname, 'templates/sitemap.hbs');
 
 module.exports = function sitemap(options) {
   return function(app) {
-    if (!app.isApp) return;
-    var template = path.join(__dirname, 'templates/sitemap.hbs');
+    if (!isValid(app, 'assemble-sitemap')) return;
 
-    app.create('sitemapTemplates');
-    app.sitemapTemplate(template);
+    app.postWrite(/\.xml$/, function(view, next) {
+      view.extname = '.hbs';
+      next();
+    });
 
     // namespace the helpers to avoid conflict with custom helpers
     app.asyncHelper('sitemap_entry', entry);
     app.asyncHelper('sitemap_collection', require('helper-collection'));
-    app.asyncHelper('sitemap_default', function(value, defaultValue, options, cb) {
-      cb(null, value == null ? defaultValue : value);
-    });
 
     app.define('sitemap', function(name, options, fn) {
       if (name !== null && typeof name !== 'string') {
@@ -36,54 +37,68 @@ module.exports = function sitemap(options) {
         options = {dest: options};
       }
 
-      var appOpts = app.option('sitemap');
-      var appData = app.data('sitemap');
+      var opts = sitemapOptions(app, options);
+      var tmpl = opts.template || template;
+      var view = app.view({path: tmpl});
+      view.contents = fs.readFileSync(tmpl);
 
-      var opts = merge({template: template}, appOpts, appData, options);
-      var view = app.sitemapTemplate(opts.template);
-      console.log(view.cwd)
-      console.log(view.base)
-      console.log(view.dirname)
-      console.log(view.path)
-      console.log(view.relative)
+      let destBase;
+      let files = [];
 
+      app.on('dest', function(dest) {
+        destBase = dest;
+      });
 
       function rename(file) {
-        var dest = opts.dest || app.get('cache.dest') || app.option('dest') || app.data('dest');
-        var cwd = opts.cwd || app.get('cache.cwd') || app.option('cwd') || app.data('cwd');
+        var dest = get(app, opts, 'dest');
+        var cwd = get(app, opts, 'cwd');
 
         file.basename = 'sitemap.xml';
+        if (cwd) {
+          file.cwd = path.resolve(cwd);
+        }
+
+        var base = destBase;
+        if (typeof destBase === 'function') {
+          base = destBase(file.clone());
+        }
+
+        if (dest && base) {
+          file.base = base;
+          if (base.indexOf(dest) !== 0) {
+            file.dirname = path.resolve(file.base, dest);
+          } else {
+            file.dirname = file.base;
+          }
+          file.path = path.resolve(file.dirname, file.basename);
+        } else if (base) {
+          file.base = base;
+          file.dirname = file.base;
+          file.path = path.resolve(file.dirname, file.basename);
+        } else {
+          throw new Error('expected dest or destBase to be defined');
+        }
 
         if (typeof fn === 'function') {
           fn(file);
-        } else {
-          if (cwd) {
-            file.cwd = cwd;
-          }
-          if (dest) {
-            file.base = dest;
-          }
         }
-
-        console.log(file.cwd)
-        console.log(file.base)
-        console.log(file.dirname)
-        console.log(file.path)
-        console.log(file.relative)
       }
 
       return through.obj(function(file, enc, next) {
+        files.push(file);
         next(null, file);
       }, function(cb) {
-        var data = app.data('sitemap') || {};
-        var self = this;
+        let data = app.data('sitemap');
+        let self = this;
 
         if (typeof name === 'string') {
           data.collection = name;
         }
 
         if (typeof data.collection === 'undefined') {
-          data.collection = 'pages';
+          app.create('sitemap_files');
+          app.sitemap_files(files);
+          data.collection = 'sitemap_files';
         }
 
         app.render(view, {sitemap: data}, function(err, view) {
@@ -92,7 +107,7 @@ module.exports = function sitemap(options) {
             return;
           }
           rename(view);
-          // self.push(view);
+          self.push(view);
           cb();
         });
       });
@@ -101,33 +116,35 @@ module.exports = function sitemap(options) {
 };
 
 function entry(item, tag, options, cb) {
-  var data = item.data.sitemap || {};
-  var opts = merge({}, this.options, this.options.sitemap, this.context.sitemap, data);
-  var dest = opts.dest || this.app.get('cache.dest') || this.app.options.dest;
-  var val = null;
+  let data = extend({}, item.data, item.data.sitemap);
+  let opts = extend({}, sitemapOptions(this.app));
+  let dest = get(this.app, opts, 'dest');
+  let val = null;
+
+  let ctx = extend({}, opts, this.context, data);
 
   switch (tag) {
     case 'loc':
-      var rel = item.relative;
-      if (dest && item.data.dest) {
-        rel = path.join(path.relative(dest, item.data.dest), rel);
+      let rel = item.relative;
+      if (dest && ctx.dest) {
+        rel = path.join(path.relative(dest, ctx.dest), rel);
       }
 
-      val = url.resolve(opts.url, rel);
+      val = url.resolve(ctx.url, rel);
       break;
+
     case 'lastmod':
-      val = lastModified(data, item);
-
-      if (!val) {
-        cb(new Error('no lastmod datestamp found for: ' + item.path));
-        return;
-      }
-
+      val = lastModified(ctx, item);
       break;
+
     case 'changefreq':
-    case 'priority':
-      val = opts[tag];
+      val = ctx[tag] || 'weekly';
       break;
+
+    case 'priority':
+      val = ctx[tag] || '0.5';
+      break;
+
     default: {
       cb(new Error('unrecognized tag: ' + tag));
       return;
@@ -137,12 +154,19 @@ function entry(item, tag, options, cb) {
 }
 
 function lastModified(data, item) {
-  var date = data.lastModified ||  data.lastmod || item.stat && item.stat.mtime;
-  if (typeof date === 'undefined') {
-    date = new Date();
-  }
-  if (date && typeof date === 'string' && !/^\d{4}-\d{2}-\d{2}/.test(date)) {
-    date = new Date(date);
-  }
-  return date.toISOString().slice(0, 10);
+  var date = data.lastModified || data.lastmod || item.stat && item.stat.mtime;
+  return moment(date).format('YYYY-MM-DD');
+}
+
+function sitemapOptions(app, options) {
+  var appOpts = app.option('sitemap');
+  var appData = app.data('sitemap');
+  return extend({}, app.options, appOpts, appData, options);
+}
+
+function get(app, options, prop) {
+  return options[prop]
+    || app.get(['cache', prop])
+    || app.option(prop)
+    || app.data(prop);
 }

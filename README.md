@@ -1,7 +1,7 @@
 ## Usage
 
 ```js
-var sitemap = require('{%= name %}');
+var sitemap = require('assemble-sitemaps');
 ```
 
 ## FAQ
@@ -20,3 +20,4 @@ For more information, see:
 **Should I include generated pages, like category or tag indexes that link to other pages?**
 
 No. It's recommended that you only include URLs for "original" pages. Crawlers see these indexes as duplicate information.
+

@@ -10,7 +10,6 @@
   },
   "license": "MIT",
   "files": [
-    "assemblefile.js",
     "index.js",
     "templates"
   ],
@@ -48,11 +47,13 @@
     "yo"
   ],
   "dependencies": {
+    "extend-shallow": "^2.0.1",
     "helper-collection": "^0.1.0",
     "html-tag": "^1.0.0",
-    "mixin-deep": "^1.1.3",
+    "is-valid-app": "^0.2.1",
+    "moment": "^2.17.1",
     "through2": "^2.0.3",
-    "to-regex-range": "^1.0.2"
+    "view-fs": "^0.2.0"
   },
   "devDependencies": {
     "assemble": "^0.22.0",
