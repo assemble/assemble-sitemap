@@ -3,6 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var isValid = require('is-valid-app');
+var collection = require('helper-collection');
 var through = require('through2');
 var entry = require('./lib/entry');
 var utils = require('./lib/utils');
@@ -17,9 +18,9 @@ module.exports = function sitemap(options) {
       next();
     });
 
-    // namespace the helpers to avoid conflict with custom helpers
+    // register helpers (namespaced to avoid conflict with user-defined helpers)
     app.helper('sitemap_entry', entry);
-    app.asyncHelper('sitemap_collection', require('helper-collection'));
+    app.asyncHelper('sitemap_collection', collection);
 
     app.define('sitemap', function(name, options, fn) {
       if (name !== null && typeof name !== 'string') {

@@ -1,10 +1,10 @@
 'use strict';
 
 var path = require('path');
-var dest = path.join.bind(path, __dirname, 'dist');
 var del = require('delete');
-var assemble = require('assemble');
 var sitemap = require('..');
+var assemble = require('assemble');
+var dest = path.join.bind(path, __dirname, 'dist');
 
 var app = module.exports = assemble();
 app.use(sitemap());
@@ -29,12 +29,11 @@ app.data('sitemap', {
   priority: '0.8'
 });
 
-app.task('default', function(cb) {
+app.task('default', ['delete'], function(cb) {
   return app.toStream('posts')
     .pipe(app.toStream('pages'))
     .pipe(app.renderFile())
-    .pipe(app.sitemap('posts', {dest: 'posts'}))
-    .pipe(app.sitemap('pages', {dest: 'docs'}))
+    .pipe(app.sitemap())
     .pipe(app.dest(dest()));
 });
 
@@ -42,6 +41,7 @@ app.task('delete', function(cb) {
   del(dest(), cb);
 });
 
-app.build(['delete', 'default'], function(err) {
+app.build(function(err) {
   if (err) return console.log(err);
+  console.log('done');
 });

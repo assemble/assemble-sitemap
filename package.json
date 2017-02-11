@@ -61,6 +61,7 @@
   },
   "dependencies": {
     "extend-shallow": "^2.0.1",
+    "get-value": "^2.0.6",
     "helper-collection": "^0.2.1",
     "html-tag": "^1.0.0",
     "is-valid-app": "^0.2.1",

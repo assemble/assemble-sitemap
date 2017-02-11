@@ -14,6 +14,7 @@ var actual = path.join.bind(path, __dirname, 'actual');
 var fixtures = path.join.bind(path, __dirname, 'fixtures');
 var app;
 
+// util for matching fixtures
 function matches(re, filepath) {
   var str = fs.readFileSync(filepath, 'utf8');
   return re.test(str);
@@ -258,7 +259,7 @@ describe('sitemap', function() {
 
     app.toStream('pages')
       .pipe(app.renderFile())
-      .pipe(app.sitemap({template: path.resolve(__dirname, 'sitemap.hbs')}))
+      .pipe(app.sitemap({template: fixtures('sitemap.hbs')}))
       .pipe(app.dest(app.options.dest))
       .on('end', function() {
         assert(exists(actual('sitemap.xml')));
@@ -271,7 +272,7 @@ describe('sitemap', function() {
 
     app.toStream('pages')
       .pipe(app.renderFile())
-      .pipe(app.sitemap({template: path.resolve(__dirname, 'sitemap-bad.hbs')}))
+      .pipe(app.sitemap({template: fixtures('sitemap-bad.hbs')}))
       .on('error', function(err) {
         assert(/flalalallalla/.test(err.message));
         cb();
