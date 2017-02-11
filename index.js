@@ -18,7 +18,7 @@ module.exports = function sitemap(options) {
     });
 
     // namespace the helpers to avoid conflict with custom helpers
-    app.asyncHelper('sitemap_entry', entry);
+    app.helper('sitemap_entry', entry);
     app.asyncHelper('sitemap_collection', require('helper-collection'));
 
     app.define('sitemap', function(name, options, fn) {
@@ -38,7 +38,6 @@ module.exports = function sitemap(options) {
       var opts = utils.sitemapOptions(app, options);
       var tmpl = opts.template || template;
       var view = app.view({path: tmpl});
-      view.contents = fs.readFileSync(tmpl);
 
       let destBase;
       let files = [];
@@ -98,6 +97,7 @@ module.exports = function sitemap(options) {
           app.sitemap_files(files);
           data.collection = 'sitemap_files';
         }
+
 
         app.render(view, {sitemap: data}, function(err, view) {
           if (err) {

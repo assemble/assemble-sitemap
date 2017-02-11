@@ -32,5 +32,5 @@ app.task('default', function(cb) {
 });
 
 app.task('delete', function(cb) {
-  del('dist', cb);
+  del(dest(), cb);
 });

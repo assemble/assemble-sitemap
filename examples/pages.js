@@ -43,7 +43,7 @@ app.task('default', ['delete'], function(cb) {
 });
 
 app.task('delete', function(cb) {
-  del('dist', cb);
+  del(dest(), cb);
 });
 
 app.build(function(err) {

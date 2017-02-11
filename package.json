@@ -46,14 +46,26 @@
     "yeoman",
     "yo"
   ],
+  "verb": {
+    "toc": false,
+    "layout": "default",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
+    "lint": {
+      "reflinks": true
+    }
+  },
   "dependencies": {
     "extend-shallow": "^2.0.1",
-    "helper-collection": "^0.1.0",
+    "helper-collection": "^0.2.1",
     "html-tag": "^1.0.0",
     "is-valid-app": "^0.2.1",
     "moment": "^2.17.1",
-    "through2": "^2.0.3",
-    "view-fs": "^0.2.0"
+    "through2": "^2.0.3"
   },
   "devDependencies": {
     "assemble": "^0.22.0",
@@ -61,8 +73,13 @@
     "fs-exists-sync": "^0.1.0",
     "gulp": "^3.9.1",
     "gulp-eslint": "^3.0.1",
+    "gulp-format-md": "^0.1.11",
     "gulp-istanbul": "^1.1.1",
     "gulp-mocha": "^3.0.1",
-    "mocha": "^3.2.0"
+    "helper-glob-files": "^0.1.0",
+    "matched": "^0.4.4",
+    "mocha": "^3.2.0",
+    "view-fs": "^0.2.0",
+    "vinyl": "^2.0.1"
   }
 }
