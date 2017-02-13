@@ -1,7 +1,7 @@
 {
   "name": "assemble-sitemaps",
   "description": "Assemble pipeline plugin for generating one or more sitemaps, for one more more collections, to one or more destination paths.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://github.com/assemble/assemble-sitemap",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "assemble/assemble-sitemaps",
