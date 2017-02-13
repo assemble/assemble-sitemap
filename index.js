@@ -9,20 +9,10 @@ var assign = require('assign-deep');
 module.exports = function(options) {
   return function(app) {
     if (!isValid(app, 'assemble-sitemap')) return;
-    var sitemapDest;
     var files = [];
 
     // register sitemap handlebars helpers
     app.helpers(sitemap.helpers);
-
-    /**
-     * Generate a sitemap for the given collection or collections.
-     *
-     * @param {[type]} collection
-     * @param {String} options) {      var dest
-     * @return {[type]}
-     * @api public
-     */
 
     app.define('sitemap', function(collection, options) {
       var dest = '';
@@ -95,7 +85,3 @@ module.exports = function(options) {
     });
   };
 };
-
-function arrayify(val) {
-  return val ? (Array.isArray(val) ? val : [val]) : [];
-}
