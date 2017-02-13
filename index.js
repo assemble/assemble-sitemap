@@ -1,115 +1,101 @@
 'use strict';
 
-var fs = require('fs');
 var path = require('path');
-var isValid = require('is-valid-app');
-var collection = require('helper-collection');
 var through = require('through2');
-var entry = require('./lib/entry');
-var utils = require('./lib/utils');
-var template = path.join(__dirname, 'templates/sitemap.hbs');
+var isValid = require('is-valid-app');
+var sitemap = require('handlebars-helper-sitemap');
+var assign = require('assign-deep');
 
-module.exports = function sitemap(options) {
+module.exports = function(options) {
   return function(app) {
     if (!isValid(app, 'assemble-sitemap')) return;
+    var sitemapDest;
+    var files = [];
 
-    app.postWrite(/\.xml$/, function(view, next) {
-      view.extname = '.hbs';
-      next();
-    });
+    // register sitemap handlebars helpers
+    app.helpers(sitemap.helpers);
 
-    // register helpers (namespaced to avoid conflict with user-defined helpers)
-    app.helper('sitemap_entry', entry);
-    app.asyncHelper('sitemap_collection', collection);
+    /**
+     * Generate a sitemap for the given collection or collections.
+     *
+     * @param {[type]} collection
+     * @param {String} options) {      var dest
+     * @return {[type]}
+     * @api public
+     */
 
-    app.define('sitemap', function(name, options, fn) {
-      if (name !== null && typeof name !== 'string') {
-        options = name;
-        name = null;
+    app.define('sitemap', function(collection, options) {
+      var dest = '';
+      var data = {};
+
+      if (Array.isArray(collection)) {
+        data.collections = collection;
+        collection = null;
       }
 
-      if (typeof options === 'function') {
-        fn = options;
+      if (typeof collection !== 'string') {
+        options = collection;
+        collection = null;
+      }
+
+      if (typeof options === 'string' || typeof options === 'function') {
+        dest = options;
         options = {};
       }
-      if (typeof options === 'string') {
-        options = {dest: options};
+
+      options = options || {};
+      collection = collection || options.collection;
+      dest = dest || options.dest;
+
+      if (options.collections) {
+        data.collections = options.collections;
       }
 
-      var opts = utils.sitemapOptions(app, options);
-      var tmpl = opts.template || template;
-      var view = app.view({path: tmpl});
-
-      let destBase;
-      let files = [];
-
-      app.on('dest', function(dest) {
-        destBase = dest;
+      var view = app.view('sitemap.xml', {
+        data: data,
+        contents: options.template || sitemap.template,
+        engine: 'hbs'
       });
 
-      function rename(file) {
-        var dest = utils.getProp(app, opts, 'dest');
-        var cwd = utils.getProp(app, opts, 'cwd');
-
-        file.basename = 'sitemap.xml';
-        if (cwd) {
-          file.cwd = path.resolve(cwd);
-        }
-
-        var base = destBase;
-        if (typeof destBase === 'function') {
-          base = destBase(file.clone());
-        }
-
-        if (dest && base) {
-          file.base = base;
-          if (base.indexOf(dest) !== 0) {
-            file.dirname = path.resolve(file.base, dest);
-          } else {
-            file.dirname = file.base;
-          }
-          file.path = path.resolve(file.dirname, file.basename);
-        } else if (base) {
-          file.base = base;
-          file.dirname = file.base;
-          file.path = path.resolve(file.dirname, file.basename);
-        } else {
-          throw new Error('expected dest or destBase to be defined');
-        }
-
-        if (typeof fn === 'function') {
-          fn(file);
-        }
-      }
-
       return through.obj(function(file, enc, next) {
+        if (file.isNull()) {
+          next(null, file);
+          return;
+        }
+
+        if (file.basename === 'sitemap.xml') {
+          next(null, file);
+          return;
+        }
+
         files.push(file);
         next(null, file);
       }, function(cb) {
-        let data = app.data('sitemap');
-        let self = this;
+        let data = assign({}, app.cache.data, app.data('sitemap'));
+        var file = files[0];
 
-        if (typeof name === 'string') {
-          data.collection = name;
+        if (typeof collection === 'undefined') {
+          collection = data.collection || file.options.collection;
         }
 
-        if (typeof data.collection === 'undefined') {
-          app.create('sitemap_files');
-          app.sitemap_files(files);
-          data.collection = 'sitemap_files';
+        view.data.collection = collection;
+        view.base = file.base;
+        view.cwd = file.cwd;
+        view.dirname = file.dirname;
+
+        if (typeof dest === 'function') {
+          dest(view);
+        } else if (dest) {
+          view.dirname = path.join(file.dirname, dest);
         }
 
-
-        app.render(view, {sitemap: data}, function(err, view) {
-          if (err) {
-            cb(err);
-            return;
-          }
-          rename(view);
-          self.push(view);
-          cb();
-        });
+        this.push(view);
+        cb();
       });
     });
   };
 };
+
+function arrayify(val) {
+  return val ? (Array.isArray(val) ? val : [val]) : [];
+}

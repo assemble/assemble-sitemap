@@ -1,6 +1,6 @@
 {
   "name": "assemble-sitemaps",
-  "description": "Generate sitemaps and sitemap indices with Assemble.",
+  "description": "Assemble pipeline plugin for generating sitemaps for one or more collections.",
   "version": "0.1.0",
   "homepage": "https://github.com/assemble/assemble-sitemap",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
@@ -60,16 +60,14 @@
     }
   },
   "dependencies": {
-    "extend-shallow": "^2.0.1",
-    "get-value": "^2.0.6",
-    "helper-collection": "^0.2.1",
-    "html-tag": "^1.0.0",
+    "assign-deep": "^0.4.5",
+    "gulp-rename": "^1.2.2",
+    "handlebars-helper-sitemap": "^0.1.0",
     "is-valid-app": "^0.2.1",
-    "moment": "^2.17.1",
     "through2": "^2.0.3"
   },
   "devDependencies": {
-    "assemble": "^0.22.0",
+    "assemble": "^0.23.0",
     "delete": "^0.3.2",
     "fs-exists-sync": "^0.1.0",
     "gulp": "^3.9.1",
@@ -77,10 +75,7 @@
     "gulp-format-md": "^0.1.11",
     "gulp-istanbul": "^1.1.1",
     "gulp-mocha": "^3.0.1",
-    "helper-glob-files": "^0.1.0",
-    "matched": "^0.4.4",
-    "mocha": "^3.2.0",
-    "view-fs": "^0.2.0",
-    "vinyl": "^2.0.1"
+    "helper-collection": "^0.2.1",
+    "mocha": "^3.2.0"
   }
 }

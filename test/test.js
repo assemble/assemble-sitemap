@@ -49,8 +49,26 @@ describe('sitemap', function() {
 
   it('should generate a sitemap when `app.options.dest` is not defined:', function(cb) {
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap())
+      .pipe(app.renderFile())
+      .pipe(app.dest(actual()))
+      .on('end', function() {
+        assert(exists(actual('sitemap.xml')));
+        assert(matches(/xxx\.html/, actual('sitemap.xml')));
+        cb();
+      });
+  });
+
+  it('should generate a sitemap when `app.src()` is used', function(cb) {
+    var app = assemble();
+    app.use(sitemap());
+    app.data({sitemap: {url: 'https://assemble.io'}});
+    app.src('fixtures/posts/*.hbs', {cwd: __dirname})
+      .on('data', function(data) {
+        data.extname = '.html';
+      })
+      .pipe(app.sitemap())
+      .pipe(app.renderFile())
       .pipe(app.dest(actual()))
       .on('end', function() {
         assert(exists(actual('sitemap.xml')));
@@ -63,8 +81,8 @@ describe('sitemap', function() {
     app.option('dest', actual());
 
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap())
+      .pipe(app.renderFile())
       .pipe(app.dest(app.options.dest))
       .on('end', function() {
         assert(exists(actual('sitemap.xml')));
@@ -77,8 +95,8 @@ describe('sitemap', function() {
     app.option('dest', actual());
 
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap('posts'))
+      .pipe(app.renderFile())
       .pipe(app.dest(actual()))
       .on('end', function() {
         assert(exists(actual('sitemap.xml')));
@@ -91,8 +109,8 @@ describe('sitemap', function() {
     app.option('dest', actual());
 
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap())
+      .pipe(app.renderFile())
       .pipe(app.dest(actual('blog')))
       .on('end', function() {
         assert(exists(actual('blog/sitemap.xml')));
@@ -107,8 +125,8 @@ describe('sitemap', function() {
     app.data('sitemap', {changefreq: 'whatever'});
 
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap())
+      .pipe(app.renderFile())
       .pipe(app.dest(actual('blog')))
       .on('end', function() {
         assert(exists(actual('blog/sitemap.xml')));
@@ -124,8 +142,8 @@ describe('sitemap', function() {
     app.data('sitemap', {changefreq: 'whatever'});
 
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap())
+      .pipe(app.renderFile())
       .pipe(app.dest(actual('blog')))
       .on('end', function() {
         assert(exists(actual('blog/sitemap.xml')));
@@ -140,8 +158,8 @@ describe('sitemap', function() {
     app.option('dest', actual());
 
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap())
+      .pipe(app.renderFile())
       .pipe(app.dest(actual('blog')))
       .on('end', function() {
         assert(exists(actual('blog/sitemap.xml')));
@@ -154,8 +172,8 @@ describe('sitemap', function() {
     app.option('dest', actual());
 
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap())
+      .pipe(app.renderFile())
       .pipe(app.dest(actual('blog')))
       .on('end', function() {
         assert(exists(actual('blog/sitemap.xml')));
@@ -168,11 +186,11 @@ describe('sitemap', function() {
     app.option('dest', actual());
 
     app.toStream('posts')
+      .pipe(app.sitemap('posts'))
       .pipe(app.renderFile())
-      .pipe(app.sitemap('posts', {dest: 'foo', cwd: __dirname}))
       .pipe(app.dest(actual('blog')))
       .on('end', function() {
-        assert(exists(actual('blog/foo/sitemap.xml')));
+        assert(exists(actual('blog/sitemap.xml')));
         cb();
       });
   });
@@ -181,13 +199,27 @@ describe('sitemap', function() {
     app.option('dest', actual());
 
     app.toStream('posts')
-      .pipe(app.renderFile())
       .pipe(app.sitemap('posts', 'blog'))
       .pipe(app.sitemap('pages', 'docs'))
-      .pipe(app.dest(app.options.dest))
+      .pipe(app.renderFile()).on('error', cb)
+      .pipe(app.dest(actual()))
       .on('end', function() {
         assert(exists(actual('blog/sitemap.xml')));
         assert(exists(actual('docs/sitemap.xml')));
+        cb();
+      });
+  });
+
+  it('should generate sitemaps for an array of collections:', function(cb) {
+    app.option('dest', actual());
+
+    app.toStream('posts')
+      .pipe(app.toStream('pages'))
+      .pipe(app.sitemap(['posts', 'pages']))
+      .pipe(app.renderFile()).on('error', cb)
+      .pipe(app.dest(actual()))
+      .on('end', function() {
+        assert(exists(actual('sitemap.xml')));
         cb();
       });
   });
@@ -196,11 +228,11 @@ describe('sitemap', function() {
     app.option('dest', actual());
 
     app.toStream('pages')
-      .pipe(app.renderFile())
       .pipe(app.sitemap('pages', function(file) {
         file.dirname = actual('docs');
         file.base = actual();
       }))
+      .pipe(app.renderFile())
       .pipe(app.dest(app.options.dest))
       .on('end', function() {
         assert(exists(actual('docs/sitemap.xml')));
@@ -213,7 +245,6 @@ describe('sitemap', function() {
 
     app.toStream('pages')
       .pipe(app.toStream('posts'))
-      .pipe(app.renderFile())
       .pipe(app.sitemap('posts', function(file) {
         file.dirname = actual('blog');
         file.base = actual();
@@ -222,6 +253,7 @@ describe('sitemap', function() {
         file.dirname = actual('docs');
         file.base = actual();
       }))
+      .pipe(app.renderFile())
       .pipe(app.dest(app.options.dest))
       .on('end', function() {
         assert(exists(actual('blog/sitemap.xml')));
@@ -235,18 +267,14 @@ describe('sitemap', function() {
 
     app.toStream('pages')
       .pipe(app.toStream('posts'))
-      .pipe(app.renderFile())
       .pipe(app.sitemap('posts', function(file) {
-        file.dirname = actual('blog');
-        file.base = actual();
+        file.dirname = path.join(file.dirname, 'blog');
       }))
       .pipe(app.sitemap('pages', function(file) {
-        file.dirname = actual('docs');
-        file.base = actual();
+        file.dirname = path.join(file.dirname, 'docs');
       }))
-      .pipe(app.dest(function(file) {
-        return app.options.dest;
-      }))
+      .pipe(app.renderFile())
+      .pipe(app.dest(app.options.dest))
       .on('end', function() {
         assert(exists(actual('blog/sitemap.xml')));
         assert(exists(actual('docs/sitemap.xml')));
@@ -257,24 +285,13 @@ describe('sitemap', function() {
   it('should use a custom template to generate a sitemap.xml', function(cb) {
     app.option('dest', actual());
 
+    var template = fs.readFileSync(fixtures('sitemap.hbs'));
     app.toStream('pages')
+      .pipe(app.sitemap({template: template}))
       .pipe(app.renderFile())
-      .pipe(app.sitemap({template: fixtures('sitemap.hbs')}))
       .pipe(app.dest(app.options.dest))
       .on('end', function() {
         assert(exists(actual('sitemap.xml')));
-        cb();
-      });
-  });
-
-  it('should throw an error when an invalid sitemap entry is used', function(cb) {
-    app.option('dest', actual());
-
-    app.toStream('pages')
-      .pipe(app.renderFile())
-      .pipe(app.sitemap({template: fixtures('sitemap-bad.hbs')}))
-      .on('error', function(err) {
-        assert(/flalalallalla/.test(err.message));
         cb();
       });
   });
