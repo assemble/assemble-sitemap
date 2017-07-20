@@ -3,43 +3,43 @@
 {{! multiple collections defined on "collections" }}
 {{#if collections}}
 {{#each collections as |collection|}}
-{{#collection @collection}}
-{{#each (filterItems (urlset items)) as |item|}}
-  {{url @item}}
+{{#_collection @collection}}
+{{#each (_filterItems (_urlset items)) as |item|}}
+  {{_url @item}}
 {{/each}}
-{{/collection}}
+{{/_collection}}
 {{/each}}
 {{! list of items defined on "sitemap.items" }}
 {{else if sitemap.items}}
-{{#each (filterItems (urlset sitemap.items)) as |item|}}
-  {{url @item}}
+{{#each (_filterItems (_urlset sitemap.items)) as |item|}}
+  {{_url @item}}
 {{/each}}
 {{! list of items defined on "items" }}
 {{else if items}}
-{{#each (filterItems (urlset items)) as |item|}}
-  {{url @item}}
+{{#each (_filterItems (_urlset items)) as |item|}}
+  {{_url @item}}
 {{/each}}
 {{! single collection defined on "collection" }}
 {{else if collection}}
-{{#collection collection}}
-{{#each (filterItems (urlset items)) as |item|}}
-  {{url @item}}
+{{#_collection collection}}
+{{#each (_filterItems (_urlset items)) as |item|}}
+  {{_url @item}}
 {{/each}}
-{{/collection}}
+{{/_collection}}
 {{! single collection defined on "collection" }}
 {{else if sitemap.collection}}
-{{#collection sitemap.collection}}
-{{#each (filterItems (urlset items)) as |item|}}
-  {{url @item}}
+{{#_collection sitemap.collection}}
+{{#each (_filterItems (_urlset items)) as |item|}}
+  {{_url @item}}
 {{/each}}
-{{/collection}}
+{{/_collection}}
 {{! this condition is met when "pages" and "files" (or whatever collection the sitemap is on) are the only _renderable_ collections }}
 {{else unless (greaterThan app.viewTypes.renderable.length 2)}}
-{{#collection "pages"}}
-{{#each (filterItems (urlset items)) as |item|}}
-  {{url @item}}
+{{#_collection "pages"}}
+{{#each (_filterItems (_urlset items)) as |item|}}
+  {{_url @item}}
 {{/each}}
-{{/collection}}
+{{/_collection}}
 {{else}}
 {{throw "helper-sitemap cannot find a collection to render"}}
 {{/if}}
